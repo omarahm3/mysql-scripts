@@ -2,11 +2,11 @@ require('dotenv').config();
 
 const {init, connect}              = require('./db-connection');
 const {log}               = require('./helper');
-const _forEach            = require('async-foreach').forEach;
 const _cliProgress        = require('cli-progress');
 const _randomTimestamp    = require('random-timestamps');
 const _randomMillisecond  = require('random-millisecond');
-const { _csvParser }      = require('json2csv');
+const { Parser }          = require('json2csv');
+const _path               = require("path");
 const _fileSystem         = require("fs");
 const CONFIG              = {
   timeout: process.env.QUERY_TIMEOUT,
@@ -58,13 +58,7 @@ main = async () => {
 
   log('SCRIPT_LOG', 'Connected to database', '-', 30, true, true);
   
-  // First get all unique account IDs to insert records with random account ids
-  const uniqueAccountIds = `SELECT DISTINCT account_id, assigned_agent_id, chatcampaign_id, session_id, visitor_id, host_id FROM test.report_conversations`;
-  log('QUERY', `Executing query ${uniqueAccountIds} \n`);
-
-  const rows = await db.query({sql: uniqueAccountIds, timeout: CONFIG.timeout});
-
-  console.log(JSON.parse)
+  const rows = await getUniqueData();
 
   log('QUERY', `Processing insert`);
 
@@ -113,16 +107,37 @@ getUniqueData = async () => {
     const result = _fileSystem.readFileSync(fileTitle, 'utf8');
     return JSON.parse(result);
   }
-  // First get all unique account IDs to insert records with random account ids
-  const uniqueAccountIds = `SELECT DISTINCT account_id, assigned_agent_id, chatcampaign_id, session_id, visitor_id, host_id FROM test.report_conversations`;
-  log('QUERY', `Executing query ${uniqueAccountIds} \n`);
 
-  const rows = await db.query({sql: uniqueAccountIds, timeout: CONFIG.timeout});
+  // First get all unique account IDs to insert records with random account ids
+  const distinctQuery = `SELECT 
+                        (SELECT group_concat(DISTINCT account_id) FROM test.report_conversations) as account_id,
+                        (SELECT group_concat(DISTINCT assigned_agent_id) FROM test.report_conversations) as assigned_agent_id,
+                        (SELECT group_concat(DISTINCT chatcampaign_id) FROM test.report_conversations) as chatcampaign_id,
+                        (SELECT group_concat(DISTINCT session_id) FROM test.report_conversations) as session_id,
+                        (SELECT group_concat(DISTINCT visitor_id) FROM test.report_conversations) as visitor_id,
+                        (SELECT group_concat(DISTINCT host_id) FROM test.report_conversations) as host_id`
+                        
+  log('QUERY', `Executing query ${distinctQuery} \n`);
+
+  const rows = prepareRows(await db.query({sql: distinctQuery, timeout: CONFIG.timeout}));
 
   // Save that result to file
   saveToFile(fileTitle, JSON.stringify(rows));
 
   return rows;
+}
+
+prepareRows = (rows) => {
+  const row   = rows[0];
+  const data  = {}
+
+  data['account_id']        = row['account_id'].split(',');
+  data['assigned_agent_id'] = row['assigned_agent_id'].split(',');
+  data['chatcampaign_id']   = row['chatcampaign_id'].split(',');
+  data['session_id']        = row['session_id'].split(',');
+  data['visitor_id']        = row['visitor_id'].split(',');
+  data['host_id']           = row['host_id'].split(',');
+  return data;
 }
 
 generateCsvFile = (data, title = 'data.csv') => {
@@ -198,12 +213,12 @@ getRandomFromArray = (arr) => {
 getFromMysqlRows = (rows, elementName) => {
   const elements = [];
 
-  rows.forEach((row) => {
+  rows[elementName].forEach((value) => {
     // Discard empty values
-    if (row[elementName] == '') {
+    if (value == '' || value == 'undefined') {
       return;
     }
-    elements.push(row[elementName]);
+    elements.push(value);
   })
 
   return elements;
