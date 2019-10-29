@@ -1,10 +1,15 @@
 {
   "dependencies": {
     "async-foreach": "^0.1.3",
+    "async-mysql": "^1.0.1",
     "body-parser": "^1.19.0",
+    "cli-progress": "^3.3.1",
     "dotenv": "^8.2.0",
     "ejs": "^2.7.1",
     "express": "^4.17.1",
-    "mysql": "^2.17.1"
+    "json2csv": "^4.5.4",
+    "mysql": "^2.17.1",
+    "random-millisecond": "^1.0.4",
+    "random-timestamps": "^1.0.1"
   }
 }
