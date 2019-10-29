@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const {init, connect}              = require('./db-connection');
+const {init, connect}     = require('./db-connection');
 const {log}               = require('./helper');
 const _cliProgress        = require('cli-progress');
 const _randomTimestamp    = require('random-timestamps');
@@ -11,8 +11,8 @@ const _fileSystem         = require("fs");
 const CONFIG              = {
   timeout: process.env.QUERY_TIMEOUT,
   breakOnError: false,
-  bulkValue: 50000,
-  loopValue: 500,
+  bulkValue: 1000000,
+  loopValue: 1,
   columns: [
     'acceptUrl',
     'account_id',
@@ -148,7 +148,7 @@ saveToFile = (title, data) => {
   const file = _path.resolve(process.cwd(), title);
   
   if (_fileSystem.existsSync(file)) {
-    _fileSystem.appendFileSync(file, data);
+    return _fileSystem.appendFileSync(file, data);
   }
 
   return _fileSystem.writeFileSync(file, data, 'utf8');
