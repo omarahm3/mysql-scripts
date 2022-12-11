@@ -6,7 +6,7 @@
     "cli-progress": "^3.3.1",
     "dotenv": "^8.2.0",
     "ejs": "^2.7.1",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "json2csv": "^4.5.4",
     "mysql": "^2.17.1",
     "random-millisecond": "^1.0.4",
